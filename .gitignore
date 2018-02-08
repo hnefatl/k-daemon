@@ -1,0 +1,4 @@
+.stack-work/
+.vscode/
+k-daemon.cabal
+*~
