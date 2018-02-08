@@ -5,11 +5,16 @@ import System.Exit
 import Control.Monad (when)
 import System.Environment (getArgs, lookupEnv)
 import Data.Default (def)
-import Data.Maybe (fromMaybe, maybe)
+import Data.Maybe (maybe)
 
 import Common
 import Vpn
 import AptUpdate
+
+-- `when` wrapped in the Maybe monad (passing Nothing is equivalent to the condition being false)
+maybeWhen :: Monad m => Maybe a -> (a -> Bool) -> m () -> m ()
+maybeWhen Nothing _ _ = return ()
+maybeWhen (Just x) p a = when (p x) a
 
 main :: IO ()
 main = do
@@ -17,7 +22,7 @@ main = do
 
     -- If we're root, make sure the daemon's running
     user <- lookupEnv "USER"
-    when (fromMaybe "" user == "root") $ do
+    maybeWhen user (== "root") $ do
         ensureDaemonRunning "k-daemon" def daemonProcess
         when (null args) (exitWith ExitSuccess)
 
