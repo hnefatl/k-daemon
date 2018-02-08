@@ -1,0 +1,18 @@
+#!/bin/bash
+
+sudo pkill k-daemon
+stack build
+
+./install
+
+sudo k-daemon
+
+echo "Updating apt"
+k-daemon apt-update
+echo "VPN Down"
+k-daemon vpn down cambridge-vpn
+sleep 5
+echo "VPN Up"
+k-daemon vpn up cambridge-vpn
+
+sudo pkill k-daemon

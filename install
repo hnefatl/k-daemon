@@ -1,0 +1,5 @@
+#!/bin/bash
+
+stack install
+echo "Installing binary to /bin"
+sudo mv ~/.local/bin/k-daemon /bin

@@ -24,7 +24,7 @@ aptupdate = doCommand "apt update" "" (\e -> "Failed with code " ++ show e)
 vpn :: [String] -> IO String
 vpn ("up":name:_) = setVpn "up" name
 vpn ("down":name:_) = setVpn "down" name
-vpn _ = return "Usage: k-daemon vpn <up|down>"
+vpn _ = return "Usage: k-daemon vpn <up|down> <vpn name>"
 
 setVpn :: String -> String -> IO String
 setVpn state name = doCommand ("ipsec " ++ state ++ " " ++ name) "" (\e -> "Failed with code " ++ show e)
