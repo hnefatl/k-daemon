@@ -1,5 +1,18 @@
 #!/bin/bash
 
+echo "Stopping service"
+sudo systemctl stop k-daemon.service
+sudo systemctl disable k-daemon.service
+
+sudo pkill k-daemon
+
 stack install
 echo "Installing binary to /bin"
 sudo mv ~/.local/bin/k-daemon /bin
+
+echo "Replacing service file"
+sudo cp k-daemon.service /etc/systemd/system/k-daemon.service
+
+echo "Restarting service"
+sudo systemctl enable k-daemon.service
+sudo systemctl start k-daemon.service

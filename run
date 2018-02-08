@@ -1,6 +1,5 @@
 #!/bin/bash
 
-sudo pkill k-daemon
 stack build
 
 ./install

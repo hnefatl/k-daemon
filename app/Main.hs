@@ -20,4 +20,5 @@ main = do
     result <- runClient "localhost" (daemonPort def) args :: IO (Maybe String)
     case result of
         Nothing -> putStrLn "Failed to connect to the daemon"
+        Just "" -> return ()
         Just s  -> putStrLn s

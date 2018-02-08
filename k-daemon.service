@@ -1,0 +1,11 @@
+[Unit]
+Description=Starts the k-daemon, to allow for a restricted set of sudo commands to be run from userspace
+
+[Service]
+Type=oneshot
+ExecStart=/bin/k-daemon
+RemainAfterExit=yes
+User=root
+
+[Install]
+WantedBy=multi-user.target
