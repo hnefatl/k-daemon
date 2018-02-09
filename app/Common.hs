@@ -20,20 +20,20 @@ instance Serialize Result where
                 err <- get
                 return (Failure msg err)
 
+createResult :: ExitCode -> Maybe String -> Maybe String -> Result
+createResult exit good bad = case exit of
+            ExitSuccess -> Success good
+            ExitFailure e -> Failure bad e
 
 -- Run a command, returning the "good message" if it succeeds and the "bad message" with the exit code if it fails
 shellCommand :: String -> Maybe String -> Maybe String -> IO Result
 shellCommand command goodMessage badMessage = do
     handle <- spawnCommand command
     exit <- waitForProcess handle
-    case exit of
-        ExitSuccess -> return $ Success goodMessage
-        ExitFailure e -> return $ Failure badMessage e
+    return $ createResult exit goodMessage badMessage
 
 -- Run a command, returning the output if it succeeds, and the "bad message" with the exit code if it fails
 shellCommandRead :: String -> Maybe String -> IO Result
 shellCommandRead command badMessage = do
     (exit, out, _) <- readCreateProcessWithExitCode (shell command) ""
-    case exit of
-        ExitSuccess -> return $ Success (Just out)
-        ExitFailure e -> return $ Failure badMessage e
+    return $ createResult exit (Just out) badMessage
