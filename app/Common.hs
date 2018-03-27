@@ -6,6 +6,13 @@ import Data.Serialize (Serialize, put, get)
 
 data Result = Success (Maybe String) | Failure (Maybe String) Int
 
+data Command = Command
+    {
+        name :: String,
+        handler :: [String] -> IO Result,
+        startup :: Maybe (IO Result)
+    }
+
 -- Serialisation information for a Result
 instance Serialize Result where
     put (Success m) = put True >> put m

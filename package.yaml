@@ -35,3 +35,4 @@ executables:
     - cereal
     - data-default
     - process
+    - containers
