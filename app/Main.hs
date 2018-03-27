@@ -8,11 +8,13 @@ import Control.Monad (when)
 import System.Environment (getArgs, lookupEnv)
 import Data.Default (def)
 import Data.Maybe (maybe, catMaybes)
+import Data.IORef
 import qualified Data.Map as M
 
 import Common
 import Vpn
 import AptUpdate
+import Sync
 
 -- `when` wrapped in the Maybe monad (passing Nothing is equivalent to the condition being false)
 maybeWhen :: Monad m => Maybe a -> (a -> Bool) -> m () -> m ()
@@ -23,11 +25,16 @@ main :: IO ()
 main = do
     args <- getArgs
 
+    sync <- makeSync
+    let rawCommands = [aptupdate, vpn, sync]
+    let commands = M.fromList $ zipFrom name rawCommands
+
     -- If we're root, make sure the daemon's running
     user <- lookupEnv "USER"
     maybeWhen user (== "root") $ do
-        ensureDaemonWithHandlerRunning "k-daemon" def daemonProcess
-        when (null args) (exitWith ExitSuccess)
+        firstRun <- newIORef True
+        ensureDaemonWithHandlerRunning "k-daemon" def (daemonProcess firstRun commands)
+        when (null args) (exitWith ExitSuccess) -- In the special case of being root and running with no args, exit
 
     -- Contact the daemon, pass it our commands
     result <- runClient "localhost" (daemonPort def) args :: IO (Maybe Result)
@@ -38,22 +45,25 @@ main = do
             Success msg -> maybe (return ()) putStrLn msg
 
 
-commands :: M.Map String Command
-commands = M.fromList $ zipFrom name [aptupdate, vpn]
-
 zipFrom :: (v -> k) -> [v] -> [(k, v)]
 zipFrom f xl = zip (map f xl) xl
 
-daemonProcess :: Handler ()
-daemonProcess prod cons = do
-        sequence_ $ catMaybes $ map startup $ M.elems commands -- Run all startup commands
-        commandReceiver daemonInternal prod cons -- Run the default handler
+daemonProcess :: IORef Bool -> M.Map String Command -> Handler ()
+daemonProcess firstRunRef commands prod cons = do
+        -- Only perform startup stuff on the first time the handler's run
+        firstRun <- readIORef firstRunRef
+        when firstRun $ do
+            writeIORef firstRunRef False
+            results <- sequence $ catMaybes $ map startup $ M.elems commands -- Run all startup commands
+            let failures = filter isFailure results
+            when (not $ null failures) $ do { print failures ; exitWith $ ExitFailure 1 }
+        commandReceiver (daemonInternal commands) prod cons -- Run the default handler
 
-daemonInternal :: [String] -> IO Result
-daemonInternal args = do
+daemonInternal :: M.Map String Command -> [String] -> IO Result
+daemonInternal commands args = do
         case args of
             [] -> retFailure
             (command:args') -> case M.lookup command commands of
-                    Nothing -> retFailure
-                    Just c  -> handler c $ args'
+                        Nothing -> retFailure
+                        Just c  -> handler c $ args'
     where retFailure = return $ Failure (Just "Usage: k-daemon <command> [arguments]") 1

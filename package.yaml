@@ -31,8 +31,12 @@ executables:
     - -with-rtsopts=-N
     - -Wall
     dependencies:
+    - mtl
+    - lifted-base
     - daemons
     - cereal
     - data-default
     - process
+    - filepath
     - containers
+    - concurrent-extra

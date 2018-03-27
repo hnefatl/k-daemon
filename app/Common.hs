@@ -5,13 +5,14 @@ import System.Process
 import Data.Serialize (Serialize, put, get)
 
 data Result = Success (Maybe String) | Failure (Maybe String) Int
+            deriving (Eq, Show)
 
-data Command = Command
-    {
-        name :: String,
-        handler :: [String] -> IO Result,
-        startup :: Maybe (IO Result)
-    }
+isSuccess :: Result -> Bool
+isSuccess (Success _) = True
+isSuccess (Failure _ _) = False
+
+isFailure :: Result -> Bool
+isFailure = not . isSuccess
 
 -- Serialisation information for a Result
 instance Serialize Result where
@@ -26,6 +27,16 @@ instance Serialize Result where
                 msg <- get
                 err <- get
                 return (Failure msg err)
+
+data Command = Command
+    {
+        name :: String,
+        handler :: [String] -> IO Result,
+        startup :: Maybe (IO Result)
+    }
+instance Show Command where
+    show (Command n _ _) = show n
+
 
 createResult :: ExitCode -> Maybe String -> Maybe String -> Result
 createResult exit good bad = case exit of
